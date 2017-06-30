@@ -3,11 +3,18 @@ package com.example.ambrosio.newsapp;
 import android.net.Uri;
 import android.util.Log;
 
+import com.example.ambrosio.newsapp.model.Repository;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 import static android.content.ContentValues.TAG;
@@ -70,5 +77,24 @@ public class NetworkUtils {
             urlConnection.disconnect();
         }
     }
+    public static ArrayList<Repository> parseJSON(String json) throws JSONException {
+        ArrayList<Repository> result = new ArrayList<>();
+        JSONObject main = new JSONObject(json);
+        JSONArray items = main.getJSONArray("articles");
+
+        for(int i = 0; i < items.length(); i++){
+            JSONObject item = items.getJSONObject(i);
+            String author = item.getString("author");
+            String title = item.getString("title");
+            String description = item.getString("description");
+            String url = item.getString("url");
+            String urlToImage = item.getString("urlToImage");
+            String publishedAt= item.getString("publishedAt");
+            Repository repo = new Repository( author,  title,  description,  url,  urlToImage,  publishedAt);
+            result.add(repo);
+        }
+        return result;
+    }
+
 
 }

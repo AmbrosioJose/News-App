@@ -1,8 +1,13 @@
 package com.example.ambrosio.newsapp;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -12,12 +17,18 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 
+import com.example.ambrosio.newsapp.model.Repository;
+
+import org.json.JSONException;
+
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-
-    private TextView mNewsTextView;
+    static final String TAG = "mainactivity";
+    private RecyclerView mRecyclerView;
+    private NewsAdapter mNewsAdapter;
     private ProgressBar mProgress;
 
 
@@ -26,79 +37,90 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mNewsTextView= (TextView) findViewById(R.id.tv_news_data);
-        mProgress= (ProgressBar) findViewById(R.id.progressBar);
-        //mSearchBoxEdit=(EditText) findViewById(R.id.search_box);
-
-        new NetworkTask().execute();
+        mRecyclerView = (RecyclerView) findViewById(R.id.recyclerview_news);
+        mProgress = (ProgressBar) findViewById(R.id.progressBar);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+        mRecyclerView.setLayoutManager(layoutManager);
+        mRecyclerView.setHasFixedSize(true);
+//        mNewsAdapter=new NewsAdapter();
+//        mRecyclerView.setAdapter(mNewsAdapter);
+//        new NetworkTask().execute();
     }
 
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main,menu);
+        getMenuInflater().inflate(R.menu.main, menu);
+        NetworkTask task = new NetworkTask();
+        task.execute();
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int itemNumber = item.getItemId();
-        if(itemNumber == R.id.search){
 
-            mNewsTextView.setText("");
-            new NetworkTask().execute();
-            return true;
-
-            //makes toast
-//            Toast.makeText(this, "A toast to you!", Toast.LENGTH_LONG).show();
-
-
+        if (itemNumber == R.id.search) {
+            NetworkTask task = new NetworkTask();
+            task.execute();
         }
 
-        return super.onOptionsItemSelected(item);
+        return true;
+    }
+    public void openWebPage(String url) {
+        Uri webpage = Uri.parse(url);
+        Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivity(intent);
+        }
     }
 
-    public class NetworkTask extends AsyncTask<String, Void, String>{
+    class NetworkTask extends AsyncTask<String, Void, ArrayList<Repository>> {
 
         @Override
-        protected  void onPreExecute(){
+        protected void onPreExecute() {
             super.onPreExecute();
             mProgress.setVisibility(View.VISIBLE);
         }
 
         @Override
-        protected String doInBackground(String... params) {
+        protected ArrayList<Repository> doInBackground(String... params) {
+            ArrayList<Repository> result = null;
+            URL newsRequestUrl = NetworkUtils.buildUrl();
 
-            URL newsRequestUrl= NetworkUtils.buildUrl();
-
-            try{
+            try {
                 String jsonNewsResponse = NetworkUtils.
                         getResponseFromHttpUrl(newsRequestUrl);
+                result = NetworkUtils.parseJSON(jsonNewsResponse);
 
-
-                return jsonNewsResponse;
-            }catch (Exception e){
+            } catch (IOException e) {
                 e.printStackTrace();
-            return null;
+            } catch (JSONException e) {
+                e.printStackTrace();
             }
-
+            return result;
         }
 
         @Override
-        protected void onPostExecute(String newsData){
-            //with search
-//            if(newsData != null && !newsData.equals("")){
-//                mNewsTextView.setText(newsData);
-//            }
-
-//            without search
+        protected void onPostExecute(final ArrayList<Repository> newsData) {
             super.onPostExecute(newsData);
             mProgress.setVisibility(View.GONE);
-            if(newsData == null){
-                mNewsTextView.setText("Sorry, not news was recieved");
-            }else{
-                mNewsTextView.append(newsData);
+            if (newsData != null) {
+                NewsAdapter adapter = new NewsAdapter(newsData, new NewsAdapter.ItemClickListener() {
+                    @Override
+                    public void onItemClick(int clickedItemIndex) {
+                        String url = newsData.get(clickedItemIndex).getUrl();
+                        openWebPage(url);
+                        Log.d(TAG, String.format("Url %s", url));
+                    }
+                });
+                mRecyclerView.setAdapter(adapter);
             }
         }
     }
 }
+
+
+
+
+

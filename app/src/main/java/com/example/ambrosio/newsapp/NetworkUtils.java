@@ -1,9 +1,15 @@
 package com.example.ambrosio.newsapp;
 
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.util.Log;
 
-import com.example.ambrosio.newsapp.model.Repository;
+import com.example.ambrosio.newsapp.model.Contract;
+import com.example.ambrosio.newsapp.model.DBHelper;
+import com.example.ambrosio.newsapp.model.NewsItem;
+
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -14,6 +20,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -24,6 +31,8 @@ import static android.content.ContentValues.TAG;
  */
 
 public class NetworkUtils {
+
+
 
 
     //Goal is to build this:
@@ -77,10 +86,11 @@ public class NetworkUtils {
             urlConnection.disconnect();
         }
     }
-    public static ArrayList<Repository> parseJSON(String json) throws JSONException {
-        ArrayList<Repository> result = new ArrayList<>();
+    public static ArrayList<NewsItem> parseJSON(String json) throws JSONException {
+        ArrayList<NewsItem> result = new ArrayList<>();
         JSONObject main = new JSONObject(json);
         JSONArray items = main.getJSONArray("articles");
+
 
         for(int i = 0; i < items.length(); i++){
             JSONObject item = items.getJSONObject(i);
@@ -90,11 +100,17 @@ public class NetworkUtils {
             String url = item.getString("url");
             String urlToImage = item.getString("urlToImage");
             String publishedAt= item.getString("publishedAt");
-            Repository repo = new Repository( author,  title,  description,  url,  urlToImage,  publishedAt);
-            result.add(repo);
+            NewsItem news = new NewsItem( author,  title,  description,  url,  urlToImage,  publishedAt);
+
+            result.add(news);
         }
+
         return result;
     }
+
+
+
+
 
 
 }

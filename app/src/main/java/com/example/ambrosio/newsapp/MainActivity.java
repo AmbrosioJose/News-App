@@ -52,11 +52,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         mRecyclerView.setLayoutManager(layoutManager);
         mRecyclerView.setHasFixedSize(true);
 
-        Context context=this;
-        PackageManager pm = context.getPackageManager();
+
 
         helper = new DBHelper(this);
 
+        //gets a writable databasse
         db = helper.getWritableDatabase();
 
         //gets a shared preference file titled MyPrefsFile and opens it
